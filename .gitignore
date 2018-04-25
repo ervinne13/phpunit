@@ -6,6 +6,7 @@
 /build/phpdox
 /build/*.phar
 /build/*.phar.asc
+/nbproject
 /tests/TextUI/*.diff
 /tests/TextUI/*.exp
 /tests/TextUI/*.log
