@@ -27,7 +27,7 @@ use ReflectionMethod;
  */
 class Test
 {
-    const REGEX_DATA_PROVIDER      = '/@dataProvider\s+([a-zA-Z0-9._:-\\\\x7f-\xff]+)/';
+    const REGEX_DATA_PROVIDER      = '/@dataProvider\s+([a-zA-Z0-9._:-\\\\x7f-\xff]+)\(?\)?/';
     const REGEX_TEST_WITH          = '/@testWith\s+/';
     const REGEX_EXPECTED_EXCEPTION = '(@expectedException\s+([:.\w\\\\x7f-\xff]+)(?:[\t ]+(\S*))?(?:[\t ]+(\S*))?\s*$)m';
     const REGEX_REQUIRES_VERSION   = '/@requires\s+(?P<name>PHP(?:Unit)?)\s+(?P<operator>[<>=!]{0,2})\s*(?P<version>[\d\.-]+(dev|(RC|alpha|beta)[\d\.])?)[ \t]*\r?$/m';
@@ -445,6 +445,19 @@ class Test
                 $dataProviderMethodNameNamespace = explode('\\', $match);
                 $leaf                            = explode('::', array_pop($dataProviderMethodNameNamespace));
                 $dataProviderMethodName          = array_pop($leaf);
+                
+                $params = [];
+                
+                //  check for parameters                
+                if (substr($dataProviderMethodName, strlen($leaf) - 1) == ')') {
+                    $dataProviderMethodName = substr($leaf, 0, strlen($leaf) - 1);
+                }
+                
+                if (strpos($dataProviderMethodName, '(') !== false) {
+                    $methodNameParts = explode('(', $dataProviderMethodName);
+                    $dataProviderMethodName = array_shift($methodNameParts);
+                    $params = explode(',', array_shift($methodNameParts));
+                }
 
                 if (!empty($dataProviderMethodNameNamespace)) {
                     $dataProviderMethodNameNamespace = implode('\\', $dataProviderMethodNameNamespace) . '\\';
@@ -472,7 +485,7 @@ class Test
                 if ($dataProviderMethod->getNumberOfParameters() == 0) {
                     $data = $dataProviderMethod->invoke($object);
                 } else {
-                    $data = $dataProviderMethod->invoke($object, $methodName);
+                    $data = $dataProviderMethod->invoke($object, $methodName, ...$params);
                 }
 
                 if ($data instanceof Iterator) {
